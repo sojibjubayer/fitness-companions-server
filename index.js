@@ -63,20 +63,7 @@ async function run() {
             const result = await FitnessServiceCollection.insertOne(newservices)
             res.send(result)
         })
-        // get from mongoDb
-        app.get('/services', async (req, res) => {
-            const cursor = FitnessServiceCollection.find()
-            const result = await cursor.toArray()
-            res.send(result)
-        })
-
-         // get from mongodb for details by id
-         app.get('/services/:id', async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: new ObjectId(id) }
-            const result = await FitnessServiceCollection.findOne(query)
-            res.send(result)
-          })
+      
 
 
 
