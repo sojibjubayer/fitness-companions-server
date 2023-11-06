@@ -86,12 +86,15 @@ async function run() {
             res.send(result)
         })
 
-        // get booked services from mongodb for update/delete
-        app.get('/bookedServices', async (req, res) => {
-            const cursor = FitnessBookedCollection.find()
-            const result = await cursor.toArray()
-            res.send(result)
-        })
+        
+        //Delete from services by email
+        
+    app.delete('/services/:id', async (req, res) => {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) }
+        const result = await FitnessServiceCollection.deleteOne(query)
+        res.send(result)
+      })
 
 
 
