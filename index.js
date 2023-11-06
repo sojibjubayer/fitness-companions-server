@@ -96,6 +96,29 @@ async function run() {
         res.send(result)
       })
 
+       //Update data
+    app.put('/services/:id', async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id) }
+        const options = { upsert: true }
+        const updateService = req.body;
+        const newUpdateService = {
+          $set: {
+            pName: updateService.pName,
+            pEmail: updateService.pEmail,
+            pImage: updateService.pImage,
+            serviceName: updateService.serviceName,
+            serviceImage: updateService.serviceImage,
+            shortD: updateService.shortD,
+            serviceArea: updateService.serviceArea,
+            price: updateService.price,
+            
+          }
+        }
+        const result = await FitnessServiceCollection.updateOne(filter, newUpdateService, options)
+        res.send(result)
+      })
+
 
 
 
