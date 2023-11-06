@@ -53,6 +53,7 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         // await client.connect();
         const FitnessServiceCollection = client.db('FitnessPartner').collection('services')
+        const FitnessBookedCollection = client.db('FitnessPartner').collection('bookedServices')
 
 
 
@@ -77,6 +78,20 @@ async function run() {
             const result = await FitnessServiceCollection.findOne(query)
             res.send(result)
           })
+           // post booked services
+        app.post('/bookedServices', async (req, res) => {
+            const newBookedServices = req.body;
+            console.log(newBookedServices);
+            const result = await FitnessBookedCollection.insertOne(newBookedServices)
+            res.send(result)
+        })
+
+        // get booked services from mongodb for update/delete
+        app.get('/bookedServices', async (req, res) => {
+            const cursor = FitnessBookedCollection.find()
+            const result = await cursor.toArray()
+            res.send(result)
+        })
 
 
 
