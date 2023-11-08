@@ -1,38 +1,22 @@
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config()
-const jwt = require('jsonwebtoken')
-const cookieParser = require('cookie-parser')
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+require('dotenv').config()
 
-const app = express()
+
+const app = express();
 const port = process.env.PORT || 5000
 
-
-//Middleware
-app.use(express.json())
 app.use(cors({
     origin: ['http://localhost:5173'],
-    credentials: true,
+    credentials: true
 }))
-// app.use(cookieParser())
-// const verify = async (req, res, next) => {
-//     //cookie ache kina check koro
-//     const token = req.cookies?.token
-//     if (!token) {
-//         res.status(401).send({ status: 'unAuthoriezed' })
-//         return;
-//     }
-//     jwt.verify(token, process.env.SECRETE, (error, decode) => {
-//         if (error) {
-//             res.status(401).send({ status: 'forBidden' })
-//         }
-//         else {
-//             console.log(decode);
-//         }
+app.use(express.json());
+app.use(cookieParser());
 
-//     })
-// }
+
 
 
 
@@ -47,6 +31,31 @@ const client = new MongoClient(uri, {
         deprecationErrors: true,
     }
 });
+// Middleware by me
+const logger = async (req, res, next) => {
+    console.log('called:', req.host, req.originalUrl);
+    next()
+}
+// to vefy Token middleware by me
+const verifyToken = async (req, res, next) => {
+    const token = req.cookies?.token;
+    console.log('value of token in middleware:', token);
+    if (!token) {
+        return res.status(401).send({ message: 'not authorized.' })
+    }
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRETE, (err, decoded) => {
+        if (err) {
+            console.log(err);
+            return res.status(401).send({ message: 'not authorized.' })
+        }
+
+        console.log('value in the token:', decoded);
+        req.user = decoded;
+        next()
+
+    })
+
+}
 
 async function run() {
     try {
@@ -57,6 +66,20 @@ async function run() {
 
 
 
+        // token related api
+        app.post('/jwt', logger, async (req, res) => {
+            const user = req.body;
+            console.log(user);
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRETE,
+                { expiresIn: '1h' })
+            res
+                .cookie('token', token, {
+                    httpOnly: true,
+                    secure: false,
+
+                })
+                .send({ success: true })
+        })
         // post to mongoDb
         app.post('/services', async (req, res) => {
             const newservices = req.body;
@@ -71,14 +94,14 @@ async function run() {
             res.send(result)
         })
 
-         // get from mongodb for details by id
-         app.get('/services/:id', async (req, res) => {
+        // get from mongodb for details by id
+        app.get('/services/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
             const result = await FitnessServiceCollection.findOne(query)
             res.send(result)
-          })
-           // post booked services
+        })
+        // post booked services
         app.post('/bookedServices', async (req, res) => {
             const newBookedServices = req.body;
             console.log(newBookedServices);
@@ -86,62 +109,62 @@ async function run() {
             res.send(result)
         })
 
-        
+
         //Delete from services by email
-        
-    app.delete('/services/:id', async (req, res) => {
-        const id = req.params.id;
-        const query = { _id: new ObjectId(id) }
-        const result = await FitnessServiceCollection.deleteOne(query)
-        res.send(result)
-      })
 
-       //Update data
-    app.put('/services/:id', async (req, res) => {
-        const id = req.params.id;
-        const filter = { _id: new ObjectId(id) }
-        const options = { upsert: true }
-        const updateService = req.body;
-        const newUpdateService = {
-          $set: {
-            pName: updateService.pName,
-            pEmail: updateService.pEmail,
-            pImage: updateService.pImage,
-            serviceName: updateService.serviceName,
-            serviceImage: updateService.serviceImage,
-            shortD: updateService.shortD,
-            serviceArea: updateService.serviceArea,
-            price: updateService.price,
-            
-          }
-        }
-        const result = await FitnessServiceCollection.updateOne(filter, newUpdateService, options)
-        res.send(result)
-      })
+        app.delete('/services/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await FitnessServiceCollection.deleteOne(query)
+            res.send(result)
+        })
 
-       // get bookedServices from mongoDb
-       app.get('/bookedServices', async (req, res) => {
-        const cursor = FitnessBookedCollection.find()
-        const result = await cursor.toArray()
-        res.send(result)
-    })
+        //Update data
+        app.put('/services/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) }
+            const options = { upsert: true }
+            const updateService = req.body;
+            const newUpdateService = {
+                $set: {
+                    pName: updateService.pName,
+                    pEmail: updateService.pEmail,
+                    pImage: updateService.pImage,
+                    serviceName: updateService.serviceName,
+                    serviceImage: updateService.serviceImage,
+                    shortD: updateService.shortD,
+                    serviceArea: updateService.serviceArea,
+                    price: updateService.price,
 
-    //Update status
-    const { ObjectId } = require('mongodb'); 
-    app.patch('/bookedServices/:id', async (req, res) => {
-        const id = req.params.id;
-        const filter = { _id: new ObjectId(id) };
-        const updatedBookedServices = req.body;
-        const updateDoc = {
-          $set: {
-            status: updatedBookedServices.status
-          },
-  
-        };
-        const result = await FitnessBookedCollection.updateOne(filter, updateDoc);
-        res.send(result)
-  
-      });
+                }
+            }
+            const result = await FitnessServiceCollection.updateOne(filter, newUpdateService, options)
+            res.send(result)
+        })
+
+        // get bookedServices from mongoDb
+        app.get('/bookedServices', async (req, res) => {
+            const cursor = FitnessBookedCollection.find()
+            const result = await cursor.toArray()
+            res.send(result)
+        })
+
+        //Update status
+        const { ObjectId } = require('mongodb');
+        app.patch('/bookedServices/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const updatedBookedServices = req.body;
+            const updateDoc = {
+                $set: {
+                    status: updatedBookedServices.status
+                },
+
+            };
+            const result = await FitnessBookedCollection.updateOne(filter, updateDoc);
+            res.send(result)
+
+        });
 
 
 
