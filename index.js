@@ -119,6 +119,30 @@ async function run() {
         res.send(result)
       })
 
+       // get bookedServices from mongoDb
+       app.get('/bookedServices', async (req, res) => {
+        const cursor = FitnessBookedCollection.find()
+        const result = await cursor.toArray()
+        res.send(result)
+    })
+
+    //Update status
+    const { ObjectId } = require('mongodb'); 
+    app.patch('/bookedServices/:id', async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id) };
+        const updatedBookedServices = req.body;
+        const updateDoc = {
+          $set: {
+            status: updatedBookedServices.status
+          },
+  
+        };
+        const result = await FitnessBookedCollection.updateOne(filter, updateDoc);
+        res.send(result)
+  
+      });
+
 
 
 
